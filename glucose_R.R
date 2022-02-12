@@ -1,7 +1,7 @@
 #########################################
 #Project Title: Glycemic control in critically ill patients with and without diabetes
 #Date created: 8/1/2022
-#Date updated: 13/1/2022
+#Date updated: 12/2/2022
 #########################################
 library("mgcv")
 library("dplyr")
@@ -14,7 +14,7 @@ library("pROC")
 library("visreg")
 #########################################
 # 1. Whole cohort
-df<- read_csv("df_uniquepatient_nonan.csv")
+df<- read_csv("df_uniquepatient_morethan2_nonan.csv")
 df$diabetes <- ifelse(df$diabetes==TRUE,"DM","Non DM")
 df$diabetes <- factor(df$diabetes)
 df$operative <- factor(df$operative)
@@ -31,8 +31,7 @@ v<-visreg(model_all_twamean, xvar = "glucose_twamean",
 v2 <- subset(v, glucose_twamean < 240)
 plot(v2, overlay=TRUE, rug=FALSE, gg=TRUE)  +theme(legend.title = element_blank())+
   labs(x = "Time-weighted average glucose (mg/dL)", y="Probability of hospital mortality") +
-  scale_x_continuous(breaks = seq(50, 240, by = 10))
-
+  scale_x_continuous(breaks = seq(50, 240, by = 10)) 
 concurvity(model_all_twamean)
 
 # 1.2 Min
@@ -87,6 +86,7 @@ plot(v2_nonDM, rug=FALSE, overlay=TRUE, gg=TRUE)  +
 or_gam(data = df_nonDM, model = model_nonDM_twamean, pred = "glucose_twamean",values = c(100,60))
 or_gam(data = df_nonDM, model = model_nonDM_twamean, pred = "glucose_twamean",values = c(100,80))
 or_gam(data = df_nonDM, model = model_nonDM_twamean, pred = "glucose_twamean",values = c(100,120))
+or_gam(data = df_nonDM, model = model_nonDM_twamean, pred = "glucose_twamean",values = c(100,160))
 or_gam(data = df_nonDM, model = model_nonDM_twamean, pred = "glucose_twamean",values = c(100,180))
 or_gam(data = df_nonDM, model = model_nonDM_twamean, pred = "glucose_twamean",values = c(120,180))
 or_gam(data = df_nonDM, model = model_nonDM_twamean, pred = "glucose_twamean",values = c(150,180))
@@ -149,6 +149,7 @@ model_DM_twamean<-gam(hospitaldischargestatus ~ s(glucose_twamean)  + operative+
 or_gam(data = df_DM, model = model_DM_twamean, pred = "glucose_twamean",values = c(100,60))
 or_gam(data = df_DM, model = model_DM_twamean, pred = "glucose_twamean",values = c(100,80))
 or_gam(data = df_DM, model = model_DM_twamean, pred = "glucose_twamean",values = c(100,120))
+or_gam(data = df_DM, model = model_DM_twamean, pred = "glucose_twamean",values = c(100,160))
 or_gam(data = df_DM, model = model_DM_twamean, pred = "glucose_twamean",values = c(100,180))
 or_gam(data = df_DM, model = model_DM_twamean, pred = "glucose_twamean",values = c(120,180))
 or_gam(data = df_DM, model = model_DM_twamean, pred = "glucose_twamean",values = c(150,180))
@@ -217,7 +218,7 @@ model_DM_twamean<-gam(hospitaldischargestatus ~ s(glucose_twamean)  + operative+
 plot(model_DM_twamean, xlab="Time-weighted average glucose (mg/dL)", ylab="f(TWA glucose)",
      select=1, ylim=c(-1,3), xlim=c(50,240), seWithMean = TRUE, rug = FALSE, shade = TRUE, shade.col = "grey", xaxt='n')
 abline(h=0,lty=2,lwd=0.5)
-abline(v=87,lty=2,lwd=0.5)
+abline(v=85,lty=2,lwd=0.5)
 abline(v=148,lty=2,lwd=0.5)
 axis(1, at = seq(50, 240, by = 10), las=2)
 #################################
@@ -253,7 +254,6 @@ summary(model_80120)
 exp(model_80120$coefficients)
 exp(confint.default(model_80120))
 
-# 1.3 Predictions
 glucose_twamean_80110<-cut(df_train_nonDM$glucose_twamean,c(0,80,110,Inf))
 glucose_twamean_80110 <- factor(glucose_twamean_80110 , levels=c("(80,110]","(0,80]","(110,Inf]"))
 model_80110 <- glm(hospitaldischargestatus ~ glucose_twamean_80110+ operative+ age + apachescore + BMI_cat + ventday1 + inotropevasopressor 
@@ -271,33 +271,39 @@ model_180200 <- glm(hospitaldischargestatus ~ glucose_twamean_180200+ operative+
                     ,data=df_train_nonDM,
                     family="binomial")
 
-
+#1.3 Predictions
 glucose_twamean_80120<-cut(df_test_nonDM$glucose_twamean,c(0,80,120,Inf))
 logit_p<-predict.glm(model_80120 , newdata=df_test_nonDM)
 p0<-exp(logit_p)/(1+exp(logit_p))
 roc_nonDM.80120<-roc(df_test_nonDM$hospitaldischargestatus,p0)
+roc_nonDM.80120
 ci(roc_nonDM.80120)
 
 glucose_twamean_80110<-cut(df_test_nonDM$glucose_twamean,c(0,80,110,Inf))
 logit_p<-predict.glm(model_80110, newdata=df_test_nonDM)
 p0<-exp(logit_p)/(1+exp(logit_p))
 roc_nonDM.80110<-roc(df_test_nonDM$hospitaldischargestatus,p0)
+roc_nonDM.80110
 ci(roc_nonDM.80110)
 
 glucose_twamean_180<-cut(df_test_nonDM$glucose_twamean,c(0,180,Inf))
 logit_p<-predict.glm(model_180, newdata=df_test_nonDM)
 p0<-exp(logit_p)/(1+exp(logit_p))
 roc_nonDM.180<-roc(df_test_nonDM$hospitaldischargestatus,p0)
+roc_nonDM.180
 ci(roc_nonDM.180)
 
 glucose_twamean_180200<-cut(df_test_nonDM$glucose_twamean,c(0,180,200,Inf))
 logit_p<-predict.glm(model_180200, newdata=df_test_nonDM)
 p0<-exp(logit_p)/(1+exp(logit_p))
 roc_nonDM.180200<-roc(df_test_nonDM$hospitaldischargestatus,p0)
+roc_nonDM.180200
 ci(roc_nonDM.180200)
 
 # 1.4 Delong's test
 roc.test(roc_nonDM.80120,roc_nonDM.80110)
+roc.test(roc_nonDM.80120,roc_nonDM.180)
+roc.test(roc_nonDM.80120,roc_nonDM.180200)
 
 ################################
 ## 2. DM
@@ -352,29 +358,35 @@ glucose_twamean_180200<-cut(df_test_DM$glucose_twamean,c(0,180, 200,Inf))
 logit_p<-predict.glm(glmmodel_DM, newdata=df_test_DM)
 p0<-exp(logit_p)/(1+exp(logit_p))
 roc_DM.gam<-roc(df_test_DM$hospitaldischargestatus,p0)
+roc_DM.gam
 ci(roc_DM.gam)
 
 logit_p<-predict.glm(model_80110, newdata=df_test_DM)
 p0<-exp(logit_p)/(1+exp(logit_p))
 roc_DM.80110<-roc(df_test_DM$hospitaldischargestatus,p0)
+roc_DM.80110
 ci(roc_DM.80110)
 
 logit_p<-predict.glm(model_180, newdata=df_test_DM)
 p0<-exp(logit_p)/(1+exp(logit_p))
 roc_DM.180<-roc(df_test_DM$hospitaldischargestatus,p0)
+roc_DM.180
 ci(roc_DM.180)
 
 logit_p<-predict.glm(model_180200, newdata=df_test_DM)
 p0<-exp(logit_p)/(1+exp(logit_p))
 roc_DM.180200<-roc(df_test_DM$hospitaldischargestatus,p0)
+roc_DM.180200
 ci(roc_DM.180200)
 
 #2.4 De Long's test
 roc.test(roc_DM.gam,roc_DM.80110)
+roc.test(roc_DM.gam,roc_DM.180)
+roc.test(roc_DM.gam,roc_DM.180200)
 
 #################################
 #Subgroup analysis: medical vs. surgical
-df<- read_csv("df_uniquepatient_nonan.csv")
+df<- read_csv("df_uniquepatient_morethan2_nonan.csv")
 df$diabetes <- factor(df$diabetes)
 df$operative <- ifelse(df$operative==1,"Surgical","Medical")
 df$operative <- factor(df$operative)
@@ -411,14 +423,96 @@ v<-visreg(model_all_cv, xvar = "glucose_cv",
 v2 <- subset(v, (glucose_cv > 10) & (glucose_cv < 50))
 plot(v2, overlay=TRUE, rug=FALSE, gg=TRUE)  +theme(legend.title = element_blank())+
   labs(x = "Coefficient of variation (%)", y="Probability of hospital mortality")
+##########################################
+#Subgroup analysis: trauma vs. non_trauma
+df<- read_csv("df_uniquepatient_morethan2_nonan.csv")
+df$diabetes <- factor(df$diabetes)
+df$trauma <- ifelse(df$trauma==1,"Trauma","Non-trauma")
+df$trauma <- factor(df$trauma)
+df$operative<- factor(df$operative)
+df$ventday1<- factor(df$ventday1)
+df$inotropevasopressor <- factor(df$inotropevasopressor)
+df$BMI_cat <- factor(df$BMI_cat)
+model_all_twamean<-gam(hospitaldischargestatus ~ s(glucose_twamean, by=trauma) + diabetes + s(age) + s(apachescore) + BMI_cat + ventday1 + inotropevasopressor ,
+                       data = df,
+                       family = binomial, method="REML")
+v<-visreg(model_all_twamean, xvar = "glucose_twamean",
+          by = "trauma", data= df,scale="response",  plot=FALSE)
+v2 <- subset(v, glucose_twamean < 240)
+plot(v2, overlay=TRUE, rug=FALSE, gg=TRUE)  +theme(legend.title = element_blank())+
+  labs(x = "Time-weighted average glucose (mg/dL)", y="Probability of hospital mortality") +
+  scale_x_continuous(breaks = seq(50, 240, by = 10))
+
+#Min
+model_all_twamean<-gam(hospitaldischargestatus ~ s(glucose_min, by=trauma) + diabetes + s(age) + s(apachescore) + BMI_cat + ventday1 + inotropevasopressor ,
+                       data = df,
+                       family = binomial, method="REML")
+v<-visreg(model_all_twamean, xvar = "glucose_min",
+          by = "trauma", data= df,scale="response",  plot=FALSE)
+v2 <- subset(v, (glucose_min > 20) & (glucose_min < 80))
+plot(v2, overlay=TRUE, rug=FALSE, gg=TRUE)  +theme(legend.title = element_blank())+
+  labs(x = "Minimum glucose (mg/dL)", y="Probability of hospital mortality")+
+  scale_x_continuous(breaks = seq(20, 80, by = 10))
+
+#CV
+model_all_cv<-gam(hospitaldischargestatus ~ s(glucose_cv, by=trauma)+ diabetes+ s(age) + s(apachescore) + BMI_cat + ventday1 + inotropevasopressor ,
+                  data = df,
+                  family = binomial, method="REML")
+v<-visreg(model_all_cv, xvar = "glucose_cv",
+          by = "trauma", data= df, trans = plogis,  plot=FALSE)
+v2 <- subset(v, (glucose_cv > 10) & (glucose_cv < 50))
+plot(v2, overlay=TRUE, rug=FALSE, gg=TRUE)  +theme(legend.title = element_blank())+
+  labs(x = "Coefficient of variation (%)", y="Probability of hospital mortality")
+
+###################################################
+#Subgroup analysis: steroid vs. no_steroid
+df<- read_csv("df_uniquepatient_morethan2_nonan.csv")
+df$diabetes <- factor(df$diabetes)
+df$steroid_use <- ifelse(df$steroid_use==1,"Steroid","No steroid")
+df$steroid_use <- factor(df$steroid_use)
+df$operative <- factor(df$operative)
+df$ventday1<- factor(df$ventday1)
+df$inotropevasopressor <- factor(df$inotropevasopressor)
+df$BMI_cat <- factor(df$BMI_cat)
+model_all_twamean<-gam(hospitaldischargestatus ~ s(glucose_twamean, by=steroid_use) + diabetes + s(age) + s(apachescore) + operative+ BMI_cat + ventday1 + inotropevasopressor ,
+                       data = df,
+                       family = binomial, method="REML")
+v<-visreg(model_all_twamean, xvar = "glucose_twamean",
+          by = "steroid_use", data= df,scale="response",  plot=FALSE)
+v2 <- subset(v, glucose_twamean < 240)
+plot(v2, overlay=TRUE, rug=FALSE, gg=TRUE)  +theme(legend.title = element_blank())+
+  labs(x = "Time-weighted average glucose (mg/dL)", y="Probability of hospital mortality") +
+  scale_x_continuous(breaks = seq(50, 240, by = 10))
+
+#Min
+model_all_twamean<-gam(hospitaldischargestatus ~ s(glucose_min, by=steroid_use) + diabetes + s(age) + s(apachescore) + operative+ BMI_cat + ventday1 + inotropevasopressor ,
+                       data = df,
+                       family = binomial, method="REML")
+v<-visreg(model_all_twamean, xvar = "glucose_min",
+          by = "operative", data= df,scale="response",  plot=FALSE)
+v2 <- subset(v, (glucose_min > 20) & (glucose_min < 80))
+plot(v2, overlay=TRUE, rug=FALSE, gg=TRUE)  +theme(legend.title = element_blank())+
+  labs(x = "Minimum glucose (mg/dL)", y="Probability of hospital mortality")+
+  scale_x_continuous(breaks = seq(20, 80, by = 10))
+
+#CV
+model_all_cv<-gam(hospitaldischargestatus ~ s(glucose_cv, by=steroid_use)+ diabetes+ s(age) + s(apachescore) + operative+ BMI_cat + ventday1 + inotropevasopressor ,
+                  data = df,
+                  family = binomial, method="REML")
+v<-visreg(model_all_cv, xvar = "glucose_cv",
+          by = "operative", data= df, trans = plogis,  plot=FALSE)
+v2 <- subset(v, (glucose_cv > 10) & (glucose_cv < 50))
+plot(v2, overlay=TRUE, rug=FALSE, gg=TRUE)  +theme(legend.title = element_blank())+
+  labs(x = "Coefficient of variation (%)", y="Probability of hospital mortality")
+
 
 #################################
 #Sensitivity analysis: IDDM vs. NIDDM
 df_DMstatusonly<-read_csv("df_DMstatusonly_nonan.csv")
 df_DMstatusonly$DM_status <- ifelse(df_DMstatusonly$DM_status=="NIDDM_diet","NIDDM on diet",
                                     (ifelse(df_DMstatusonly$DM_status=="NIDDM_OHA", "NIDDM on OHA",
-                                           (ifelse(df_DMstatusonly$DM_status=="No_DM", "Non DM",
-                                                   (ifelse(df_DMstatusonly$DM_status=="IDDM", "IDDM", "")))))))
+                                            (ifelse(df_DMstatusonly$DM_status=="No_DM", "Non DM",
+                                                    (ifelse(df_DMstatusonly$DM_status=="IDDM", "IDDM", "")))))))
 df_DMstatusonly$DM_status <- factor(df_DMstatusonly$DM_status)
 df_DMstatusonly$operative <- factor(df_DMstatusonly$operative)
 df_DMstatusonly$ventday1<- factor(df_DMstatusonly$ventday1)
@@ -435,8 +529,8 @@ plot(v2, rug=FALSE, overlay=TRUE, gg=TRUE) +theme(legend.title = element_blank()
   labs(x = "Time-weighted average glucose (mg/dL)", y="Probability of hospital mortality")
 
 DMstatus_min<-gam(hospitaldischargestatus ~ s(glucose_min, by=DM_status) + s(age) + s(apachescore) + operative+ BMI_cat + ventday1 + inotropevasopressor,
-                      data = df_DMstatusonly,
-                      family = binomial, method="REML")
+                  data = df_DMstatusonly,
+                  family = binomial, method="REML")
 v<-visreg(DMstatus_min, xvar = "glucose_min",
           by = "DM_status", data= df_DMstatusonly, trans = plogis,  plot=FALSE)
 v2 <- subset(v, (glucose_min > 20) & (glucose_min < 80))
@@ -449,6 +543,46 @@ DMstatus_cv<-gam(hospitaldischargestatus ~ s(glucose_cv, by=DM_status) + s(age) 
                  family = binomial, method="REML")
 v<-visreg(DMstatus_cv, xvar = "glucose_cv",
           by = "DM_status", data= df_DMstatusonly, trans = plogis,  plot=FALSE)
+v2 <- subset(v, (glucose_cv > 10) & (glucose_cv < 50))
+plot(v2, overlay=TRUE, rug=FALSE, gg=TRUE)  +theme(legend.title = element_blank())+
+  labs(x = "Coefficient of variation (%)", y="Probability of hospital mortality")
+#################################
+#Sensitivity analysis: all patients (including LOS<2 days)
+df<- read_csv("df_uniquepatient_all_nonan.csv")
+df$diabetes <- ifelse(df$diabetes==TRUE,"DM","Non DM")
+df$diabetes <- factor(df$diabetes)
+df$operative <- factor(df$operative)
+df$ventday1<- factor(df$ventday1)
+df$inotropevasopressor <- factor(df$inotropevasopressor)
+df$BMI_cat <- factor(df$BMI_cat)
+
+model_all_twamean<-gam(hospitaldischargestatus ~ s(glucose_twamean, by=diabetes) + s(age) + s(apachescore) + operative+ BMI_cat + ventday1 + inotropevasopressor ,
+                       data = df,
+                       family = binomial, method="REML")
+v<-visreg(model_all_twamean, xvar = "glucose_twamean",
+          by = "diabetes", data= df,scale="response",  plot=FALSE)
+v2 <- subset(v, (glucose_twamean > 50) & (glucose_twamean < 240))
+plot(v2, overlay=TRUE, rug=FALSE, gg=TRUE)  +theme(legend.title = element_blank())+
+  labs(x = "Time-weighted average glucose (mg/dL)", y="Probability of hospital mortality") +
+  scale_x_continuous(breaks = seq(50, 240, by = 10))
+
+concurvity(model_all_twamean)
+
+model_all_min<-gam(hospitaldischargestatus ~ s(glucose_min, by=diabetes) + s(age) + s(apachescore) + operative+ BMI_cat + ventday1 + inotropevasopressor ,
+                   data = df,
+                   family = binomial, method="REML")
+v<-visreg(model_all_min, xvar = "glucose_min",
+          by = "diabetes", data= df, trans = plogis,  plot=FALSE)
+v2 <- subset(v, (glucose_min > 20) & (glucose_min < 90))
+plot(v2, overlay=TRUE, rug=FALSE, gg=TRUE)  +theme(legend.title = element_blank())+
+  labs(x = "Minimum glucose (mg/dL)", y="Probability of hospital mortality")+
+  scale_x_continuous(breaks = seq(20, 90, by = 10))
+
+model_all_cv<-gam(hospitaldischargestatus ~ s(glucose_cv, by=diabetes)+ s(age) + s(apachescore) + operative+ BMI_cat + ventday1 + inotropevasopressor ,
+                  data = df,
+                  family = binomial, method="REML")
+v<-visreg(model_all_cv, xvar = "glucose_cv",
+          by = "diabetes", data= df, trans = plogis,  plot=FALSE)
 v2 <- subset(v, (glucose_cv > 10) & (glucose_cv < 50))
 plot(v2, overlay=TRUE, rug=FALSE, gg=TRUE)  +theme(legend.title = element_blank())+
   labs(x = "Coefficient of variation (%)", y="Probability of hospital mortality")
