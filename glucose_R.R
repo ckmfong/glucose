@@ -1,7 +1,6 @@
 #########################################
 #Project Title: Glycemic control in critically ill patients with and without diabetes
-#Date created: 8/1/2022
-#Date updated: 12/2/2022
+
 #########################################
 library("mgcv")
 library("dplyr")
@@ -224,168 +223,7 @@ abline(h=0,lty=2,lwd=0.5)
 abline(v=85,lty=2,lwd=0.5)
 abline(v=148,lty=2,lwd=0.5)
 axis(1, at = seq(50, 240, by = 10), las=2)
-#################################
-#Function calculating AUROC, De Long's test
-# 1. Non-DM
-df_train_nonDM<- read_csv("X_train_nonDM.csv")
-df_test_nonDM<- read_csv("X_test_nonDM.csv")
-# 1.1 Crude
-glucose_twamean_80120<-cut(df_train_nonDM$glucose_twamean,c(0,80,120,Inf))
-glucose_twamean_80120 <- factor(glucose_twamean_80120 , levels=c("(80,120]","(0,80]","(120,Inf]"))
-model_80120 <- glm(hospitaldischargestatus ~ glucose_twamean_80120,data=df_train_nonDM,
-                   family="binomial")
-glucose_twamean_80110<-cut(df_train_nonDM$glucose_twamean,c(0,80,110,Inf))
-glucose_twamean_80110 <- factor(glucose_twamean_80110 , levels=c("(80,110]","(0,80]","(110,Inf]"))
-model_80110 <- glm(hospitaldischargestatus ~ glucose_twamean_80110,data=df_train_nonDM,
-                   family="binomial")
-glucose_twamean_140180<-cut(df_train_nonDM$glucose_twamean,c(0,140,180,Inf))
-model_140180 <- glm(hospitaldischargestatus ~ glucose_twamean_140180,data=df_train_nonDM,
-                 family="binomial")
-glucose_twamean_180200<-cut(df_train_nonDM$glucose_twamean,c(0,180,200,Inf))
-glucose_twamean_180200 <- factor(glucose_twamean_180200 , levels=c("(180,200]","(0,180]","(200,Inf]"))
-model_180200 <- glm(hospitaldischargestatus ~ glucose_twamean_180200,data=df_train_nonDM,
-                    family="binomial")
 
-# 1.2 Adjusted
-glucose_twamean_80120<-cut(df_train_nonDM$glucose_twamean,c(0,80,120,Inf))
-glucose_twamean_80120 <- factor(glucose_twamean_80120 , levels=c("(80,120]","(0,80]","(120,Inf]"))
-df_train_nonDM$BMI_cat <- factor(df_train_nonDM$BMI_cat , levels=c("18.5-25","<18.5","25-<30","30-<35", "35-<40", ">=40"))
-model_80120 <- glm(hospitaldischargestatus ~ glucose_twamean_80120+ operative+ age + apachescore + BMI_cat + ventday1 + inotropevasopressor 
-                   ,data=df_train_nonDM,
-                   family="binomial")
-summary(model_80120)
-exp(model_80120$coefficients)
-exp(confint.default(model_80120))
-
-glucose_twamean_80110<-cut(df_train_nonDM$glucose_twamean,c(0,80,110,Inf))
-glucose_twamean_80110 <- factor(glucose_twamean_80110 , levels=c("(80,110]","(0,80]","(110,Inf]"))
-model_80110 <- glm(hospitaldischargestatus ~ glucose_twamean_80110+ operative+ age + apachescore + BMI_cat + ventday1 + inotropevasopressor 
-                   ,data=df_train_nonDM,
-                   family="binomial")
-
-glucose_twamean_140180<-cut(df_train_nonDM$glucose_twamean,c(0,140,180,Inf))
-model_140180 <- glm(hospitaldischargestatus ~ glucose_twamean_140180+ operative+ age + apachescore + BMI_cat + ventday1 + inotropevasopressor 
-                 ,data=df_train_nonDM,
-                 family="binomial")
-
-glucose_twamean_180200<-cut(df_train_nonDM$glucose_twamean,c(0,180,200,Inf))
-glucose_twamean_180200 <- factor(glucose_twamean_180200 , levels=c("(180,200]","(0,180]","(200,Inf]"))
-model_180200 <- glm(hospitaldischargestatus ~ glucose_twamean_180200+ operative+ age + apachescore + BMI_cat + ventday1 + inotropevasopressor 
-                    ,data=df_train_nonDM,
-                    family="binomial")
-
-#1.3 Predictions
-glucose_twamean_80120<-cut(df_test_nonDM$glucose_twamean,c(0,80,120,Inf))
-logit_p<-predict.glm(model_80120 , newdata=df_test_nonDM)
-p0<-exp(logit_p)/(1+exp(logit_p))
-roc_nonDM.80120<-roc(df_test_nonDM$hospitaldischargestatus,p0)
-roc_nonDM.80120
-ci(roc_nonDM.80120)
-
-glucose_twamean_80110<-cut(df_test_nonDM$glucose_twamean,c(0,80,110,Inf))
-logit_p<-predict.glm(model_80110, newdata=df_test_nonDM)
-p0<-exp(logit_p)/(1+exp(logit_p))
-roc_nonDM.80110<-roc(df_test_nonDM$hospitaldischargestatus,p0)
-roc_nonDM.80110
-ci(roc_nonDM.80110)
-
-glucose_twamean_140180<-cut(df_test_nonDM$glucose_twamean,c(0,140,180,Inf))
-logit_p<-predict.glm(model_140180, newdata=df_test_nonDM)
-p0<-exp(logit_p)/(1+exp(logit_p))
-roc_nonDM.140180<-roc(df_test_nonDM$hospitaldischargestatus,p0)
-roc_nonDM.140180
-ci(roc_nonDM.140180)
-
-glucose_twamean_180200<-cut(df_test_nonDM$glucose_twamean,c(0,180,200,Inf))
-logit_p<-predict.glm(model_180200, newdata=df_test_nonDM)
-p0<-exp(logit_p)/(1+exp(logit_p))
-roc_nonDM.180200<-roc(df_test_nonDM$hospitaldischargestatus,p0)
-roc_nonDM.180200
-ci(roc_nonDM.180200)
-
-# 1.4 Delong's test
-roc.test(roc_nonDM.80120,roc_nonDM.80110)
-roc.test(roc_nonDM.80120,roc_nonDM.140180)
-roc.test(roc_nonDM.80120,roc_nonDM.180200)
-
-################################
-## 2. DM
-df_train_DM<- read_csv("X_train_DM.csv")
-df_test_DM<- read_csv("X_test_DM.csv")
-# 2.1 Crude
-glucose_twamean_cut<-cut(df_train_DM$glucose_twamean,c(0,90,150,Inf))
-glucose_twamean_cut <- factor(glucose_twamean_cut , levels=c("(90,150]","(0,90]","(150,Inf]"))
-df_train_DM$BMI_cat <- factor(df_train_DM$BMI_cat , levels=c("18.5-25","<18.5","25-<30","30-<35", "35-<40", ">=40"))
-glmmodel_DM <- glm(hospitaldischargestatus ~ glucose_twamean_cut,data=df_train_DM, family="binomial")
-glucose_twamean_80110<-cut(df_train_DM$glucose_twamean,c(0,80,110,Inf))
-model_80110 <- glm(hospitaldischargestatus ~ glucose_twamean_80110,data=df_train_DM,family="binomial")
-glucose_twamean_140180<-cut(df_train_DM$glucose_twamean,c(0,140, 180,Inf))
-model_140180 <- glm(hospitaldischargestatus ~ glucose_twamean_140180,data=df_train_DM, family="binomial")
-glucose_twamean_180200<-cut(df_train_DM$glucose_twamean,c(0,180, 200,Inf))
-model_180200 <- glm(hospitaldischargestatus ~ glucose_twamean_180200,data=df_train_DM,family="binomial")
-
-#2.2 Adjusted
-glucose_twamean_cut<-cut(df_train_DM$glucose_twamean,c(0,90,150,Inf))
-glucose_twamean_cut <- factor(glucose_twamean_cut , levels=c("(90,150]","(0,90]","(150,Inf]"))
-df_train_DM$BMI_cat <- factor(df_train_DM$BMI_cat , levels=c("18.5-25","<18.5","25-<30","30-<35", "35-<40", ">=40"))
-glmmodel_DM <- glm(hospitaldischargestatus ~ glucose_twamean_cut+ operative+ age + apachescore + BMI_cat + ventday1 + inotropevasopressor 
-                   ,data=df_train_DM,
-                   family="binomial")
-summary(glmmodel_DM)
-exp(glmmodel_DM$coefficients)
-exp(confint.default(glmmodel_DM))
-
-glucose_twamean_80110<-cut(df_train_DM$glucose_twamean,c(0,80,110,Inf))
-glucose_twamean_80110 <- factor(glucose_twamean_80110 , levels=c("(80,110]","(0,80]","(110,Inf]"))
-model_80110 <- glm(hospitaldischargestatus ~ glucose_twamean_80110 + operative+ age + apachescore + BMI_cat + ventday1 + inotropevasopressor
-                   ,data=df_train_DM,
-                   family="binomial")
-
-glucose_twamean_140180<-cut(df_train_DM$glucose_twamean,c(0,140,180,Inf))
-model_140180 <- glm(hospitaldischargestatus ~ glucose_twamean_140180+ operative+ age + apachescore + BMI_cat + ventday1 + inotropevasopressor
-                 ,data=df_train_DM,
-                 family="binomial")
-
-glucose_twamean_180200<-cut(df_train_DM$glucose_twamean,c(0,180, 200,Inf))
-glucose_twamean_180200 <- factor(glucose_twamean_180200 , levels=c("(80,200]","(0,180]","(200,Inf]"))
-model_180200 <- glm(hospitaldischargestatus ~ glucose_twamean_180200+ operative+ age + apachescore + BMI_cat + ventday1 + inotropevasopressor
-                    ,data=df_train_DM,
-                    family="binomial")
-
-glucose_twamean_cut<-cut(df_test_DM$glucose_twamean,c(0,90,150,Inf))
-glucose_twamean_80110<-cut(df_test_DM$glucose_twamean,c(0,80,110,Inf))
-glucose_twamean_140180<-cut(df_test_DM$glucose_twamean,c(0,140,180,Inf))
-glucose_twamean_180200<-cut(df_test_DM$glucose_twamean,c(0,180, 200,Inf))
-
-#2.3 Predictions
-logit_p<-predict.glm(glmmodel_DM, newdata=df_test_DM)
-p0<-exp(logit_p)/(1+exp(logit_p))
-roc_DM.gam<-roc(df_test_DM$hospitaldischargestatus,p0)
-roc_DM.gam
-ci(roc_DM.gam)
-
-logit_p<-predict.glm(model_80110, newdata=df_test_DM)
-p0<-exp(logit_p)/(1+exp(logit_p))
-roc_DM.80110<-roc(df_test_DM$hospitaldischargestatus,p0)
-roc_DM.80110
-ci(roc_DM.80110)
-
-logit_p<-predict.glm(model_140180, newdata=df_test_DM)
-p0<-exp(logit_p)/(1+exp(logit_p))
-roc_DM.140180<-roc(df_test_DM$hospitaldischargestatus,p0)
-roc_DM.140180
-ci(roc_DM.140180)
-
-logit_p<-predict.glm(model_180200, newdata=df_test_DM)
-p0<-exp(logit_p)/(1+exp(logit_p))
-roc_DM.180200<-roc(df_test_DM$hospitaldischargestatus,p0)
-roc_DM.180200
-ci(roc_DM.180200)
-
-#2.4 De Long's test
-roc.test(roc_DM.gam,roc_DM.80110)
-roc.test(roc_DM.gam,roc_DM.140180)
-roc.test(roc_DM.gam,roc_DM.180200)
 
 #################################
 #Subgroup analysis: medical vs. surgical
@@ -589,3 +427,38 @@ v<-visreg(model_all_cv, xvar = "glucose_cv",
 v2 <- subset(v, (glucose_cv > 10) & (glucose_cv < 50))
 plot(v2, overlay=TRUE, rug=FALSE, gg=TRUE)  +theme(legend.title = element_blank())+
   labs(x = "Coefficient of variation (%)", y="Probability of hospital mortality")
+
+#################################
+#Sensitivity analysis: Cox PH
+library(survival)
+library(tidyverse)
+library(timereg)
+library(scales) 
+library(survminer)
+
+df.tf<- read_csv("df_survival_nonan.csv")
+df.td<- read_csv("df_survival_glucose.csv")
+
+df <- tmerge (df.tf, df.tf, id=patientunitstayid,
+              endpt=event(icu_los, unitdischargestatus))
+df <- tmerge (df, df.td, id=patientunitstayid,
+              glucose=tdc(labresultoffset, labresult))
+
+fit <-coxph(Surv(tstart,tstop,endpt)~
+              diabetes + age + apachescore + operative + BMI_cat + ventday1 + inotropevasopressor + glucose + cluster(patientunitstayid),
+            df,
+            control = coxph.control(timefix = FALSE))
+summary(fit)
+
+
+zph<-cox.zph(fit)
+zph
+
+plot(zph[8], lwd=2, xlab="Time (hours)")
+abline(0,0,col=1, lty=3, lwd=2)
+abline(h=fit$coef[2], col=4,lwd=2, lty=2)
+legend("topright",
+       legend=c("Reference line for null effect",
+                "Average hazard over time",
+                "Time-varying hazard"),
+       lty=c(3,2,1), col=c(1,4,1), lwd=2)
